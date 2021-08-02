@@ -20,11 +20,11 @@ const QuestionQuery = graphql`
 const preloadedQuery = loadQuery(RelayEnvironment, QuestionQuery, {});
 
 function Quiz(props){
-  const [questions, setQuestions] = useState(shuffle(props.data.questions.slice())); //Data for all questions (question,answer,trivia)
-  const [currentQuestion, setCurrentQuestion] = useState(0); //Defines which question is currently shown
-  const [showResult, setShowResult] = useState(false); //Defines if the user sees the result of a answered question
-  const [currentAnswerCorrect, setCurrentAnswerCorrect] = useState(null); //Defines if the user answered the currently shown question correct
-  const [userQuestionAnswers, setQuestionAnswers] = useState([]); //Saves the answers of the user for all already answered questions
+  const [questions, setQuestions] = useSessionStorage('questions',shuffle(props.data.questions.slice())); //Data for all questions (question,answer,trivia)
+  const [currentQuestion, setCurrentQuestion] = useSessionStorage('currentQuestion',0); //Defines which question is currently shown
+  const [showResult, setShowResult] = useSessionStorage('showResult',false); //Defines if the user sees the result of a answered question
+  const [currentAnswerCorrect, setCurrentAnswerCorrect] = useSessionStorage('currentAnswerCorrect',null); //Defines if the user answered the currently shown question correct
+  const [userQuestionAnswers, setQuestionAnswers] = useSessionStorage('userQuestionAnswers',[]); //Saves the answers of the user for all already answered questions
 
   useEffect(() => {
     //Update the document title
@@ -34,7 +34,7 @@ function Quiz(props){
     }else{
       document.title = `Quiz - Frage ${currentQuestion + 1} von ${questions.length}`;
     }
-  });
+  }, [questions, currentQuestion]);
 
   //Triggered when the user uses a button do answer a question
   //answerUser is either true = Wahr or false = Falsch
@@ -63,6 +63,15 @@ function Quiz(props){
     return(
       <Text mb={10}><WarningTwoIcon mr={1}/> Du hast die <Badge colorScheme="red">falsche</Badge> Antwort gewählt</Text>
     );
+  }
+
+  //Handler to reset Quiz
+  function resetQuiz(){
+    setQuestions(shuffle(props.data.questions.slice()));
+    setCurrentQuestion(0);
+    setShowResult(false);
+    setCurrentAnswerCorrect(null);
+    setQuestionAnswers([]);
   }
 
   //Displays the current question that the user has to answer
@@ -117,12 +126,12 @@ function Quiz(props){
 
     //Display the quiz result screen
     return (
-      <Center mt={10} flexDirection="column">
+      <Center mt={10} mb={10} flexDirection="column">
         <Text fontSize="2xl" mb={10}>Das Quiz ist abgeschlossen.</Text>
         {/*Display how many questions has been answered correctly and the total number of questions*/}
         <Text mb={10}>Du hast {countCorrectAnswers} von {userQuestionAnswers.length} Fragen richtig beantwortet.</Text>
         {/*Display an overview of all the questions answered in an accordion*/}
-        <Accordion allowMultiple>
+        <Accordion mb={10} allowMultiple>
           <AccordionItem>
               <AccordionButton>
                 <Box flex="1" textAlign="left">
@@ -135,12 +144,13 @@ function Quiz(props){
             </AccordionPanel>
           </AccordionItem>
         </Accordion>
+        <Button onClick={() => resetQuiz()}>Quiz neu starten</Button>
       </Center>
     );
   }else if(showResult){
     //Display the question result screen
     return (
-      <Center mt={10} flexDirection="column">
+      <Center mt={10} mb={10} flexDirection="column">
         <Question/>
         {/*Display if the user answered the question correctly*/}
         {currentAnswerCorrect ? renderAnswerCorrect() : renderAnswerWrong()}
@@ -153,7 +163,7 @@ function Quiz(props){
   }else{
     //Display the current questions that has to be answered
     return (
-      <Center mt={10} flexDirection="column">
+      <Center mt={10} mb={10} flexDirection="column">
         <Question/>
         {/*Display buttons to answer the question*/}
         <Buttons/>
@@ -191,6 +201,50 @@ function AppRoot(props) {
 }
 
 export default AppRoot;
+
+// Hook to save state in sessionStorage
+// https://usehooks.com/useSessionStorage/
+function useSessionStorage(key, initialValue) {
+  // State to store our value
+  // Pass initial state function to useState so logic is only executed once
+  const [storedValue, setStoredValue] = useState(() => {
+    try {
+      // Get from session storage by key
+      const item = window.sessionStorage.getItem(key);
+      // Parse stored json or if none return initialValue
+      if(item){
+        return JSON.parse(item);
+      }else{
+        // When not in session storage yet, save it
+        window.sessionStorage.setItem(key, JSON.stringify(initialValue));
+        return initialValue
+      }
+    } catch (error) {
+      // If error also return initialValue
+      console.log(error);
+      return initialValue;
+    }
+  });
+
+  // Return a wrapped version of useState's setter function that ...
+  // ... persists the new value to sessionStorage.
+  const setValue = (value) => {
+    try {
+      // Allow value to be a function so we have same API as useState
+      const valueToStore =
+        value instanceof Function ? value(storedValue) : value;
+      // Save state
+      setStoredValue(valueToStore);
+      // Save to session storage
+      window.sessionStorage.setItem(key, JSON.stringify(valueToStore));
+    } catch (error) {
+      // A more advanced implementation would handle the error case
+      console.log(error);
+    }
+  };
+
+  return [storedValue, setValue];
+}
 
 //Function to shuffle the question array randomly
 //https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array

@@ -4,14 +4,26 @@ directive @specifiedBy(
   url: String!
 ) on SCALAR
 
+type Mutation {
+  createScore(name: String!, score: Int!): Score!
+}
+
 type Query {
-  question(id: Int): Question
+  question(id: ID!): Question
   questions: [Question]
+  scores: [Score]
 }
 
 type Question {
-  id: Int
+  id: ID!
   question: String
   answer: Boolean
   trivia: String
 }
+
+type Score {
+  id: ID!
+  name: String
+  score: Int
+}
+

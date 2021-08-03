@@ -17,8 +17,6 @@ const QuestionQuery = graphql`
   }
 `;
 
-const preloadedQuery = loadQuery(RelayEnvironment, QuestionQuery, {});
-
 function Quiz(props){
   const [questions, setQuestions] = useSessionStorage('questions',shuffle(props.data.questions.slice())); //Data for all questions (question,answer,trivia)
   const [currentQuestion, setCurrentQuestion] = useSessionStorage('currentQuestion',0); //Defines which question is currently shown
@@ -36,65 +34,93 @@ function Quiz(props){
     }
   }, [questions, currentQuestion]);
 
-  //Triggered when the user uses a button do answer a question
-  //answerUser is either true = Wahr or false = Falsch
-  function answerQuestion(answerUser){
-    const answerQuestion = questions[currentQuestion].answer; //Correct Answer of the current question
-    setQuestionAnswers(userQuestionAnswers.slice().concat([answerUser])); //Update history of answered questions
-    setCurrentAnswerCorrect(answerUser === answerQuestion ? true : false); //Set if the user answered the current question correct
-    setShowResult(true); //Change the state to show the result screen for the current question
-  }
-
-  //Triggered when the user uses the button "Nächste Frage" on the question result screen
-  function nextQuestion(){
-    setCurrentQuestion(currentQuestion+1);
-    setShowResult(false);
-  }
-
-  //Displayed on the result screen if the user answered the question correct
-  function renderAnswerCorrect(){
-    return(
-      <Text mb={10}><CheckIcon mr={1}/>Du hast die <Badge colorScheme="green">korrekte</Badge> Antwort gewählt</Text>
-    );
-  }
-
-  //Displayed on the result screen if the user answered the question wrong
-  function renderAnswerWrong(){
-    return(
-      <Text mb={10}><WarningTwoIcon mr={1}/> Du hast die <Badge colorScheme="red">falsche</Badge> Antwort gewählt</Text>
-    );
-  }
-
-  //Handler to reset Quiz
-  function resetQuiz(){
-    setQuestions(shuffle(props.data.questions.slice()));
-    setCurrentQuestion(0);
-    setShowResult(false);
-    setCurrentAnswerCorrect(null);
-    setQuestionAnswers([]);
-  }
-
-  //Displays the current question that the user has to answer
-  function Buttons(){
-    return(
-      <HStack spacing="24px">
-        <Button colorScheme="green" onClick={() => answerQuestion(true)}>Wahr</Button>
-        <Button colorScheme="red" onClick={() => answerQuestion(false)}>Falsch</Button>
-      </HStack>
-    )
-  }
-
-  //Displays buttons for the user to answer the question
-  function Question(){
+  //Display the text of the current question
+  function QuestionText(){
     return(
       <Text mb={10} fontSize="2xl">{questions[currentQuestion].question}</Text>
-    )
+    );
   }
 
-  //Read the current question
-  const question = questions[currentQuestion];
+  //Display the current question for the user to answer
+  function Question(){
 
-  if(!question){ //If there are no more questions then the quiz has ended
+    //Displays the current question that the user has to answer
+    function AnswerButtons(){
+
+      //Triggered when the user uses a button do answer a question
+      //answerUser is either true = Wahr or false = Falsch
+      function answerQuestion(answerUser){
+        const answerQuestion = questions[currentQuestion].answer; //Correct Answer of the current question
+        setQuestionAnswers(userQuestionAnswers.slice().concat([answerUser])); //Update history of answered questions
+        setCurrentAnswerCorrect(answerUser === answerQuestion ? true : false); //Set if the user answered the current question correct
+        setShowResult(true); //Change the state to show the result screen for the current question
+      }
+
+      return(
+        <HStack spacing="24px">
+          <Button colorScheme="green" onClick={() => answerQuestion(true)}>Wahr</Button>
+          <Button colorScheme="red" onClick={() => answerQuestion(false)}>Falsch</Button>
+        </HStack>
+      )
+    }
+
+    return (
+      <Center mt={10} mb={10} flexDirection="column">
+        {/*Display the text of the current question*/}
+        <QuestionText/>
+        {/*Display buttons to answer the question*/}
+        <AnswerButtons/>
+      </Center>
+    );
+  }
+
+  //Display the answer screen of the current question
+  function QuestionAnswer(){
+    //Displayed on the result screen if the user answered the question correct
+    function renderAnswerCorrect(){
+      return(
+        <Text mb={10}><CheckIcon mr={1}/>Du hast die <Badge colorScheme="green">korrekte</Badge> Antwort gewählt</Text>
+      );
+    }
+
+    //Displayed on the result screen if the user answered the question wrong
+    function renderAnswerWrong(){
+      return(
+        <Text mb={10}><WarningTwoIcon mr={1}/> Du hast die <Badge colorScheme="red">falsche</Badge> Antwort gewählt</Text>
+      );
+    }
+
+    //Triggered when the user uses the button "Nächste Frage" on the question result screen
+    function nextQuestion(){
+      setCurrentQuestion(currentQuestion+1);
+      setShowResult(false);
+    }
+
+    return (
+      <Center mt={10} mb={10} flexDirection="column">
+        {/*Display the text of the current question*/}
+        <QuestionText/>
+        {/*Display if the user answered the question correctly*/}
+        {currentAnswerCorrect ? renderAnswerCorrect() : renderAnswerWrong()}
+        {/*Display a trivia on the answered question*/}
+        <Text mb={10}>{question.trivia}</Text>
+        {/*Button to continue to the next question*/}
+        <Button onClick={() => nextQuestion()}>Nächste Frage</Button>
+      </Center>
+    );
+  }
+
+  // Quiz Result Screen
+  function QuizResult(){
+
+    //Handler to reset Quiz
+    function resetQuiz(){
+      setQuestions(shuffle(props.data.questions.slice()));
+      setCurrentQuestion(0);
+      setShowResult(false);
+      setCurrentAnswerCorrect(null);
+      setQuestionAnswers([]);
+    }
 
     //Calculate how many questions the user answered correctly
     let countCorrectAnswers = 0;
@@ -104,7 +130,7 @@ function Quiz(props){
       }
     }
 
-    //Map the questions answered by the user to show an overview of the questions on the quiz result screen
+    //Map the questions answered by the user to show an overview of the questions
     const questionResult = userQuestionAnswers.slice().map((userAnswer,i) => {
 
       //Check if the user answered the question correctly
@@ -124,8 +150,7 @@ function Quiz(props){
       );
     });
 
-    //Display the quiz result screen
-    return (
+    return(
       <Center mt={10} mb={10} flexDirection="column">
         <Text fontSize="2xl" mb={10}>Das Quiz ist abgeschlossen.</Text>
         {/*Display how many questions has been answered correctly and the total number of questions*/}
@@ -144,42 +169,45 @@ function Quiz(props){
             </AccordionPanel>
           </AccordionItem>
         </Accordion>
+        {/*Display a button to reset the quiz to start over*/}
         <Button onClick={() => resetQuiz()}>Quiz neu starten</Button>
       </Center>
+    )
+  }
+
+  //Read the current question
+  const question = questions[currentQuestion];
+
+  if(!question){ //If there are no more questions then the quiz has ended
+    //Display the quiz result screen
+    return (
+      <QuizResult/>
     );
   }else if(showResult){
     //Display the question result screen
     return (
-      <Center mt={10} mb={10} flexDirection="column">
-        <Question/>
-        {/*Display if the user answered the question correctly*/}
-        {currentAnswerCorrect ? renderAnswerCorrect() : renderAnswerWrong()}
-        {/*Display a trivia on the answered question*/}
-        <Text mb={10}>{question.trivia}</Text>
-        {/*Button to continue to the next question*/}
-        <Button onClick={() => nextQuestion()}>Nächste Frage</Button>
-      </Center>
+      <QuestionAnswer/>
     );
   }else{
     //Display the current questions that has to be answered
     return (
-      <Center mt={10} mb={10} flexDirection="column">
-        <Question/>
-        {/*Display buttons to answer the question*/}
-        <Buttons/>
-      </Center>
+      <Question/>
     );
   }
 }
 
 function App(props) {
+
   const data = usePreloadedQuery(QuestionQuery, props.preloadedQuery);
+
   return (
     <Quiz data={data}/>
   );
 }
 
 function AppRoot(props) {
+
+  const preloadedQuery = loadQuery(RelayEnvironment, QuestionQuery, {});
 
   function loader(){
     return (

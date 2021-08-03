@@ -1,8 +1,8 @@
 import React, {useState, useEffect} from 'react';
 import graphql from 'babel-plugin-relay/macro';
-import {RelayEnvironmentProvider, loadQuery, usePreloadedQuery} from 'react-relay/hooks';
+import {RelayEnvironmentProvider, loadQuery, usePreloadedQuery, useLazyLoadQuery, commitMutation} from 'react-relay/hooks';
 import RelayEnvironment from './RelayEnvironment';
-import { extendTheme, ChakraProvider, Text, Center, Button, HStack, Badge, Box, Spinner, Accordion, AccordionItem, AccordionButton, AccordionPanel, AccordionIcon } from "@chakra-ui/react"
+import { extendTheme, ChakraProvider, Text, Center, Button, HStack, Badge, Box, Spinner, Accordion, AccordionItem, AccordionButton, AccordionPanel, AccordionIcon, Input } from "@chakra-ui/react"
 import { CheckIcon, WarningTwoIcon } from '@chakra-ui/icons'
 
 const { Suspense } = React;
@@ -33,6 +33,15 @@ function Quiz(props){
       document.title = `Quiz - Frage ${currentQuestion + 1} von ${questions.length}`;
     }
   }, [questions, currentQuestion]);
+
+  //If there are no more questions, the quiz has ended and the quiz results are shown
+  function showQuizResult(){
+    const question = questions[currentQuestion];
+    if(!question){
+      return true;
+    }
+    return false;
+  }
 
   //Display the text of the current question
   function QuestionText(){
@@ -103,7 +112,7 @@ function Quiz(props){
         {/*Display if the user answered the question correctly*/}
         {currentAnswerCorrect ? renderAnswerCorrect() : renderAnswerWrong()}
         {/*Display a trivia on the answered question*/}
-        <Text mb={10}>{question.trivia}</Text>
+        <Text mb={10}>{questions[currentQuestion].trivia}</Text>
         {/*Button to continue to the next question*/}
         <Button onClick={() => nextQuestion()}>Nächste Frage</Button>
       </Center>
@@ -112,6 +121,94 @@ function Quiz(props){
 
   // Quiz Result Screen
   function QuizResult(){
+    const [scoreBoardInput, setScoreBoardInputs] = useSessionStorage('scoreBoardInput',''); //User input for scoreboard
+    const [scoreBoardSend, setScoreBoardSend] = useSessionStorage('scoreBoardSend',false); //Defines if the user already submitted to the scoreboard
+
+    function ScoreBoardList(props){
+      const data = useLazyLoadQuery(
+        graphql`
+          query AppScoreQuery{
+            scores{
+              name
+              score
+            }
+          }
+        `,
+        {},
+        {fetchPolicy: 'store-and-network'},
+      );
+      const scores = data.scores;
+
+      //Check if there are scores yet
+      if(scores.length){
+        //Map the data to display scoreboard
+        const scoreboardList = scores.map((score,i) => {
+          return(
+            <Text mb={2} key={i}>
+              {score.name}: {score.score}
+            </Text>
+          );
+        });
+
+        return(
+          <Center mb={2} flexDirection="column">
+            {scoreboardList}
+          </Center>
+        );
+      }else{
+        return(
+          <Text mb={2}>Noch keine Resultate</Text>
+        );
+      }
+    }
+
+    function ScoreBoardInput(){
+      if(scoreBoardSend){
+        return(
+          <Box>
+            {scoreBoardInput} eingetragen.
+          </Box>
+        );
+      }else{
+        return(
+          <HStack spacing="24px" mt={3}>
+            <Input placeholder="Dein Name" w="200px" value={scoreBoardInput} onChange={(e) => setScoreBoardInputs(e.target.value)}/>
+            <Button onClick={() => addToScoreBoard()}>Eintragen</Button>
+          </HStack>
+        );
+      }
+    }
+
+    const score = countCorrectAnswers();
+
+    //Add User to Scoreboard
+    function addToScoreBoard(){
+      const mutation = graphql`
+        mutation AppCreateScoreMutation($name: String!, $score: Int!){
+          createScore(name: $name, score: $score) {
+            name
+            score
+          }
+        }
+      `
+
+      const variables = {
+        name: scoreBoardInput,
+        score: score
+      }
+
+      commitMutation(
+        RelayEnvironment,
+        {
+          mutation,
+          variables,
+          onCompleted: () => {
+            setScoreBoardSend(true);
+          },
+          onError: err => console.error(err),
+        },
+      )
+    }
 
     //Handler to reset Quiz
     function resetQuiz(){
@@ -120,14 +217,19 @@ function Quiz(props){
       setShowResult(false);
       setCurrentAnswerCorrect(null);
       setQuestionAnswers([]);
+      setScoreBoardInputs('');
+      setScoreBoardSend(false);
     }
 
     //Calculate how many questions the user answered correctly
-    let countCorrectAnswers = 0;
-    for(let i=0; i < userQuestionAnswers.length; i++){
-      if(userQuestionAnswers[i] === questions[i].answer){
-        countCorrectAnswers++;
+    function countCorrectAnswers(){
+      let countCorrectAnswers = 0;
+      for(let i=0; i < userQuestionAnswers.length; i++){
+        if(userQuestionAnswers[i] === questions[i].answer){
+          countCorrectAnswers++;
+        }
       }
+      return countCorrectAnswers;
     }
 
     //Map the questions answered by the user to show an overview of the questions
@@ -154,13 +256,13 @@ function Quiz(props){
       <Center mt={10} mb={10} flexDirection="column">
         <Text fontSize="2xl" mb={10}>Das Quiz ist abgeschlossen.</Text>
         {/*Display how many questions has been answered correctly and the total number of questions*/}
-        <Text mb={10}>Du hast {countCorrectAnswers} von {userQuestionAnswers.length} Fragen richtig beantwortet.</Text>
+        <Text mb={10}>Du hast {countCorrectAnswers()} von {userQuestionAnswers.length} Fragen richtig beantwortet.</Text>
         {/*Display an overview of all the questions answered in an accordion*/}
         <Accordion mb={10} allowMultiple>
           <AccordionItem>
               <AccordionButton>
                 <Box flex="1" textAlign="left">
-                  Übersicht
+                  Deine Antworten
                 </Box>
                 <AccordionIcon />
               </AccordionButton>
@@ -169,16 +271,19 @@ function Quiz(props){
             </AccordionPanel>
           </AccordionItem>
         </Accordion>
+        {/*Display scoreboard*/}
+        <Text mb={2} fontSize="xl">Bestenliste</Text>
+        <Center mb={10} flexDirection="column">
+          <ScoreBoardList/>
+          {ScoreBoardInput()}
+        </Center>
         {/*Display a button to reset the quiz to start over*/}
-        <Button onClick={() => resetQuiz()}>Quiz neu starten</Button>
+        <Button mb={10} onClick={() => resetQuiz()}>Quiz neu starten</Button>
       </Center>
     )
   }
 
-  //Read the current question
-  const question = questions[currentQuestion];
-
-  if(!question){ //If there are no more questions then the quiz has ended
+  if(showQuizResult()){
     //Display the quiz result screen
     return (
       <QuizResult/>
@@ -207,7 +312,7 @@ function App(props) {
 
 function AppRoot(props) {
 
-  const preloadedQuery = loadQuery(RelayEnvironment, QuestionQuery, {});
+  const preloadedQuestionQuery = loadQuery(RelayEnvironment, QuestionQuery, {});
 
   function loader(){
     return (
@@ -221,7 +326,7 @@ function AppRoot(props) {
     <ChakraProvider theme={extendTheme({ config: {  initialColorMode: "dark",  useSystemColorMode: false,} })}> {/*Chakra UI*/}
       <RelayEnvironmentProvider environment={RelayEnvironment}> {/*Relay*/}
         <Suspense fallback={loader()}> {/*While questions are gathered display loading screen*/}
-          <App preloadedQuery={preloadedQuery} />
+          <App preloadedQuery={preloadedQuestionQuery} />
         </Suspense>
       </RelayEnvironmentProvider>
     </ChakraProvider>

@@ -9,6 +9,7 @@ export type AppCreateScoreMutationVariables = {
 };
 export type AppCreateScoreMutationResponse = {
     readonly createScore: {
+        readonly id: string;
         readonly name: string | null;
         readonly score: number | null;
     };
@@ -26,9 +27,9 @@ mutation AppCreateScoreMutation(
   $score: Int!
 ) {
   createScore(name: $name, score: $score) {
+    id
     name
     score
-    id
   }
 }
 */
@@ -48,51 +49,56 @@ var v0 = [
 ],
 v1 = [
   {
-    "kind": "Variable",
-    "name": "name",
-    "variableName": "name"
-  },
-  {
-    "kind": "Variable",
-    "name": "score",
-    "variableName": "score"
+    "alias": null,
+    "args": [
+      {
+        "kind": "Variable",
+        "name": "name",
+        "variableName": "name"
+      },
+      {
+        "kind": "Variable",
+        "name": "score",
+        "variableName": "score"
+      }
+    ],
+    "concreteType": "Score",
+    "kind": "LinkedField",
+    "name": "createScore",
+    "plural": false,
+    "selections": [
+      {
+        "alias": null,
+        "args": null,
+        "kind": "ScalarField",
+        "name": "id",
+        "storageKey": null
+      },
+      {
+        "alias": null,
+        "args": null,
+        "kind": "ScalarField",
+        "name": "name",
+        "storageKey": null
+      },
+      {
+        "alias": null,
+        "args": null,
+        "kind": "ScalarField",
+        "name": "score",
+        "storageKey": null
+      }
+    ],
+    "storageKey": null
   }
-],
-v2 = {
-  "alias": null,
-  "args": null,
-  "kind": "ScalarField",
-  "name": "name",
-  "storageKey": null
-},
-v3 = {
-  "alias": null,
-  "args": null,
-  "kind": "ScalarField",
-  "name": "score",
-  "storageKey": null
-};
+];
 return {
   "fragment": {
     "argumentDefinitions": (v0/*: any*/),
     "kind": "Fragment",
     "metadata": null,
     "name": "AppCreateScoreMutation",
-    "selections": [
-      {
-        "alias": null,
-        "args": (v1/*: any*/),
-        "concreteType": "Score",
-        "kind": "LinkedField",
-        "name": "createScore",
-        "plural": false,
-        "selections": [
-          (v2/*: any*/),
-          (v3/*: any*/)
-        ],
-        "storageKey": null
-      }
-    ],
+    "selections": (v1/*: any*/),
     "type": "Mutation",
     "abstractKey": null
   },
@@ -101,38 +107,17 @@ return {
     "argumentDefinitions": (v0/*: any*/),
     "kind": "Operation",
     "name": "AppCreateScoreMutation",
-    "selections": [
-      {
-        "alias": null,
-        "args": (v1/*: any*/),
-        "concreteType": "Score",
-        "kind": "LinkedField",
-        "name": "createScore",
-        "plural": false,
-        "selections": [
-          (v2/*: any*/),
-          (v3/*: any*/),
-          {
-            "alias": null,
-            "args": null,
-            "kind": "ScalarField",
-            "name": "id",
-            "storageKey": null
-          }
-        ],
-        "storageKey": null
-      }
-    ]
+    "selections": (v1/*: any*/)
   },
   "params": {
-    "cacheID": "bde664fa48e075c8bafb8e321f72b566",
+    "cacheID": "68e340367e763262114b81d7210ab646",
     "id": null,
     "metadata": {},
     "name": "AppCreateScoreMutation",
     "operationKind": "mutation",
-    "text": "mutation AppCreateScoreMutation(\n  $name: String!\n  $score: Int!\n) {\n  createScore(name: $name, score: $score) {\n    name\n    score\n    id\n  }\n}\n"
+    "text": "mutation AppCreateScoreMutation(\n  $name: String!\n  $score: Int!\n) {\n  createScore(name: $name, score: $score) {\n    id\n    name\n    score\n  }\n}\n"
   }
 };
 })();
-(node as any).hash = '858048ada7128347f2c620c464e2ecea';
+(node as any).hash = 'd48dd8fce598c7b9598fe87826575d79';
 export default node;

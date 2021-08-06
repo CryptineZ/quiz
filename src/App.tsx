@@ -1,12 +1,13 @@
 import React, {useState, useEffect, useCallback} from 'react';
 import graphql from 'babel-plugin-relay/macro';
-import {RelayEnvironmentProvider, PreloadedQuery, loadQuery, usePreloadedQuery, useLazyLoadQuery, commitMutation} from 'react-relay/hooks';
+import {RelayEnvironmentProvider, PreloadedQuery, loadQuery, usePreloadedQuery, useLazyLoadQuery, commitMutation, FetchPolicy} from 'react-relay/hooks';
 import RelayEnvironment from './RelayEnvironment';
 import { extendTheme, ChakraProvider, Text, Center, Button, HStack, Badge, Box, Spinner, Accordion, AccordionItem, AccordionButton, AccordionPanel, AccordionIcon, Input } from "@chakra-ui/react"
 import { CheckIcon, WarningTwoIcon } from '@chakra-ui/icons'
 
 import { AppQuestionQuery, AppQuestionQueryResponse } from "./__generated__/AppQuestionQuery.graphql"
 import { AppScoreQuery } from "./__generated__/AppScoreQuery.graphql"
+import { AppCreateScoreMutation } from "./__generated__/AppCreateScoreMutation.graphql"
 
 const { Suspense } = React;
 
@@ -135,19 +136,29 @@ function Quiz(props: QuizProps){
   function QuizResult(){
     const [scoreBoardInput, setScoreBoardInputs] = useSessionStorage('scoreBoardInput',''); //User input for scoreboard
     const [scoreBoardSend, setScoreBoardSend] = useSessionStorage('scoreBoardSend',false); //Defines if the user already submitted to the scoreboard
+    const [scoardBaordUserId, setScoreBoardUserId] = useSessionStorage('scoardBaordUserId',null); //Saves the id of the users scoreboard entry
+    const [queryFetchKey, setQueryFetchKey] = useState(0);
+    const [queryPolicy, setQueryPolicy] = useState<FetchPolicy>('store-and-network');
+
+    const refreshScoreboard = useCallback(() => {
+      setQueryFetchKey(prev => (prev+1));
+      setQueryPolicy('network-only');
+    }, []);
 
     function ScoreBoardList(){
+
       const data = useLazyLoadQuery<AppScoreQuery>(
         graphql`
           query AppScoreQuery{
             scores{
+              id
               name
               score
             }
           }
         `,
         {},
-        {fetchPolicy: 'store-and-network'},
+        {fetchPolicy: queryPolicy, fetchKey: queryFetchKey},
       );
 
       //Check if there are any scores yet
@@ -170,11 +181,19 @@ function Quiz(props: QuizProps){
       //Map the data to display scoreboard
       const scoreboardList = scores.map((score,i) => {
         if(score){
-          return(
-            <Text mb={2} key={i}>
-              {score.name}: {score.score}
-            </Text>
-          );
+          if(scoardBaordUserId === score.id){
+            return(
+              <Text mb={2} key={i}>
+                <strong>{score.name}: {score.score}</strong>
+              </Text>
+            );
+          }else{
+            return(
+              <Text mb={2} key={i}>
+                {score.name}: {score.score}
+              </Text>
+            );
+          }
         }else{
           return '';
         }
@@ -205,13 +224,14 @@ function Quiz(props: QuizProps){
       }
     }
 
-    const score = countCorrectAnswers();
-
     //Add User to Scoreboard
     function addToScoreBoard(){
+      const score = countCorrectAnswers();
+
       const mutation = graphql`
         mutation AppCreateScoreMutation($name: String!, $score: Int!){
           createScore(name: $name, score: $score) {
+            id
             name
             score
           }
@@ -223,13 +243,15 @@ function Quiz(props: QuizProps){
         score: score
       }
 
-      commitMutation(
+      commitMutation<AppCreateScoreMutation>(
         RelayEnvironment,
         {
           mutation,
           variables,
-          onCompleted: () => {
+          onCompleted: (response) => {
             setScoreBoardSend(true);
+            refreshScoreboard();
+            setScoreBoardUserId(response.createScore.id);
           },
           onError: err => console.error(err),
         },
@@ -300,7 +322,9 @@ function Quiz(props: QuizProps){
         {/*Display scoreboard*/}
         <Text mb={2} fontSize="xl">Bestenliste</Text>
         <Center mb={10} flexDirection="column">
-          <ScoreBoardList/>
+          <React.Suspense fallback="Lade Bestenliste...">
+            <ScoreBoardList/>
+          </React.Suspense>
           {ScoreBoardInput()}
         </Center>
         {/*Display a button to reset the quiz to start over*/}

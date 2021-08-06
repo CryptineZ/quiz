@@ -1,28 +1,23 @@
-/**
- * @flow
- */
-
+/* tslint:disable */
 /* eslint-disable */
+// @ts-nocheck
 
-'use strict';
+import { ConcreteRequest } from "relay-runtime";
+export type AppCreateScoreMutationVariables = {
+    name: string;
+    score: number;
+};
+export type AppCreateScoreMutationResponse = {
+    readonly createScore: {
+        readonly name: string | null;
+        readonly score: number | null;
+    };
+};
+export type AppCreateScoreMutation = {
+    readonly response: AppCreateScoreMutationResponse;
+    readonly variables: AppCreateScoreMutationVariables;
+};
 
-/*::
-import type { ConcreteRequest } from 'relay-runtime';
-export type AppCreateScoreMutationVariables = {|
-  name: string,
-  score: number,
-|};
-export type AppCreateScoreMutationResponse = {|
-  +createScore: {|
-    +name: ?string,
-    +score: ?number,
-  |}
-|};
-export type AppCreateScoreMutation = {|
-  variables: AppCreateScoreMutationVariables,
-  response: AppCreateScoreMutationResponse,
-|};
-*/
 
 
 /*
@@ -38,7 +33,7 @@ mutation AppCreateScoreMutation(
 }
 */
 
-const node/*: ConcreteRequest*/ = (function(){
+const node: ConcreteRequest = (function(){
 var v0 = [
   {
     "defaultValue": null,
@@ -139,7 +134,5 @@ return {
   }
 };
 })();
-// prettier-ignore
-(node/*: any*/).hash = '858048ada7128347f2c620c464e2ecea';
-
-module.exports = node;
+(node as any).hash = '858048ada7128347f2c620c464e2ecea';
+export default node;

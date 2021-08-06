@@ -1,26 +1,21 @@
-/**
- * @flow
- */
-
+/* tslint:disable */
 /* eslint-disable */
+// @ts-nocheck
 
-'use strict';
+import { ConcreteRequest } from "relay-runtime";
+export type AppQuestionQueryVariables = {};
+export type AppQuestionQueryResponse = {
+    readonly questions: ReadonlyArray<{
+        readonly question: string | null;
+        readonly answer: boolean | null;
+        readonly trivia: string | null;
+    } | null> | null;
+};
+export type AppQuestionQuery = {
+    readonly response: AppQuestionQueryResponse;
+    readonly variables: AppQuestionQueryVariables;
+};
 
-/*::
-import type { ConcreteRequest } from 'relay-runtime';
-export type AppQuestionQueryVariables = {||};
-export type AppQuestionQueryResponse = {|
-  +questions: ?$ReadOnlyArray<?{|
-    +question: ?string,
-    +answer: ?boolean,
-    +trivia: ?string,
-  |}>
-|};
-export type AppQuestionQuery = {|
-  variables: AppQuestionQueryVariables,
-  response: AppQuestionQueryResponse,
-|};
-*/
 
 
 /*
@@ -34,7 +29,7 @@ query AppQuestionQuery {
 }
 */
 
-const node/*: ConcreteRequest*/ = (function(){
+const node: ConcreteRequest = (function(){
 var v0 = {
   "alias": null,
   "args": null,
@@ -120,7 +115,5 @@ return {
   }
 };
 })();
-// prettier-ignore
-(node/*: any*/).hash = 'c2cf9d9f22ac645615cddab2a216c9c8';
-
-module.exports = node;
+(node as any).hash = 'c2cf9d9f22ac645615cddab2a216c9c8';
+export default node;

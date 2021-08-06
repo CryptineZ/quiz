@@ -1,9 +1,12 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import graphql from 'babel-plugin-relay/macro';
-import {RelayEnvironmentProvider, loadQuery, usePreloadedQuery, useLazyLoadQuery, commitMutation} from 'react-relay/hooks';
+import {RelayEnvironmentProvider, PreloadedQuery, loadQuery, usePreloadedQuery, useLazyLoadQuery, commitMutation} from 'react-relay/hooks';
 import RelayEnvironment from './RelayEnvironment';
 import { extendTheme, ChakraProvider, Text, Center, Button, HStack, Badge, Box, Spinner, Accordion, AccordionItem, AccordionButton, AccordionPanel, AccordionIcon, Input } from "@chakra-ui/react"
 import { CheckIcon, WarningTwoIcon } from '@chakra-ui/icons'
+
+import { AppQuestionQuery, AppQuestionQueryResponse } from "./__generated__/AppQuestionQuery.graphql"
+import { AppScoreQuery } from "./__generated__/AppScoreQuery.graphql"
 
 const { Suspense } = React;
 
@@ -17,38 +20,47 @@ const QuestionQuery = graphql`
   }
 `;
 
-function Quiz(props){
-  const [questions, setQuestions] = useSessionStorage('questions',shuffle(props.data.questions.slice())); //Data for all questions (question,answer,trivia)
+type QuizProps = {
+  data: AppQuestionQueryResponse
+}
+
+function Quiz(props: QuizProps){
+  const [questions, setQuestions] = useSessionStorage('questions',props.data.questions ? shuffle(props.data.questions.slice()) : null); //Data for all questions (question,answer,trivia)
   const [currentQuestion, setCurrentQuestion] = useSessionStorage('currentQuestion',0); //Defines which question is currently shown
   const [showResult, setShowResult] = useSessionStorage('showResult',false); //Defines if the user sees the result of a answered question
   const [currentAnswerCorrect, setCurrentAnswerCorrect] = useSessionStorage('currentAnswerCorrect',null); //Defines if the user answered the currently shown question correct
   const [userQuestionAnswers, setQuestionAnswers] = useSessionStorage('userQuestionAnswers',[]); //Saves the answers of the user for all already answered questions
 
+  //Returns if the Quiz has ended
+  const showQuizResult = useCallback(
+    () => {
+      const question = questions[currentQuestion];
+      if(!question){
+        return true;
+      }
+      return false;
+    },
+    [questions, currentQuestion],
+  );
+
+  //Returns the Text of the Current Question
+  const QuestionText = useCallback(
+    () => {
+      return(
+        <Text mb={10} fontSize="2xl">{questions[currentQuestion].question}</Text>
+      );
+    },
+    [questions, currentQuestion],
+  );
+
   useEffect(() => {
     //Update the document title
-    const question = questions[currentQuestion];
-    if(!question){
+    if(showQuizResult()){
       document.title = `Quiz - Resultat`;
     }else{
       document.title = `Quiz - Frage ${currentQuestion + 1} von ${questions.length}`;
     }
-  }, [questions, currentQuestion]);
-
-  //If there are no more questions, the quiz has ended and the quiz results are shown
-  function showQuizResult(){
-    const question = questions[currentQuestion];
-    if(!question){
-      return true;
-    }
-    return false;
-  }
-
-  //Display the text of the current question
-  function QuestionText(){
-    return(
-      <Text mb={10} fontSize="2xl">{questions[currentQuestion].question}</Text>
-    );
-  }
+  }, [questions, currentQuestion, showQuizResult]);
 
   //Display the current question for the user to answer
   function Question(){
@@ -58,7 +70,7 @@ function Quiz(props){
 
       //Triggered when the user uses a button do answer a question
       //answerUser is either true = Wahr or false = Falsch
-      function answerQuestion(answerUser){
+      function answerQuestion(answerUser: boolean){
         const answerQuestion = questions[currentQuestion].answer; //Correct Answer of the current question
         setQuestionAnswers(userQuestionAnswers.slice().concat([answerUser])); //Update history of answered questions
         setCurrentAnswerCorrect(answerUser === answerQuestion ? true : false); //Set if the user answered the current question correct
@@ -124,8 +136,8 @@ function Quiz(props){
     const [scoreBoardInput, setScoreBoardInputs] = useSessionStorage('scoreBoardInput',''); //User input for scoreboard
     const [scoreBoardSend, setScoreBoardSend] = useSessionStorage('scoreBoardSend',false); //Defines if the user already submitted to the scoreboard
 
-    function ScoreBoardList(props){
-      const data = useLazyLoadQuery(
+    function ScoreBoardList(){
+      const data = useLazyLoadQuery<AppScoreQuery>(
         graphql`
           query AppScoreQuery{
             scores{
@@ -137,17 +149,21 @@ function Quiz(props){
         {},
         {fetchPolicy: 'store-and-network'},
       );
-      const scores = data.scores;
+      const scores = data ? data.scores : null;
 
       //Check if there are scores yet
-      if(scores.length){
+      if(scores && scores.length){
         //Map the data to display scoreboard
         const scoreboardList = scores.map((score,i) => {
-          return(
-            <Text mb={2} key={i}>
-              {score.name}: {score.score}
-            </Text>
-          );
+          if(score){
+            return(
+              <Text mb={2} key={i}>
+                {score.name}: {score.score}
+              </Text>
+            );
+          }else{
+            return '';
+          }
         });
 
         return(
@@ -212,7 +228,7 @@ function Quiz(props){
 
     //Handler to reset Quiz
     function resetQuiz(){
-      setQuestions(shuffle(props.data.questions.slice()));
+      setQuestions(shuffle(questions.slice()));
       setCurrentQuestion(0);
       setShowResult(false);
       setCurrentAnswerCorrect(null);
@@ -233,7 +249,7 @@ function Quiz(props){
     }
 
     //Map the questions answered by the user to show an overview of the questions
-    const questionResult = userQuestionAnswers.slice().map((userAnswer,i) => {
+    const questionResult = userQuestionAnswers.slice().map((userAnswer: boolean,i: number) => {
 
       //Check if the user answered the question correctly
       let answerCorrect = false;
@@ -299,9 +315,14 @@ function Quiz(props){
       <Question/>
     );
   }
+
 }
 
-function App(props) {
+type AppProps = {
+  preloadedQuery: PreloadedQuery<AppQuestionQuery>,
+}
+
+function App(props: AppProps) {
 
   const data = usePreloadedQuery(QuestionQuery, props.preloadedQuery);
 
@@ -310,9 +331,7 @@ function App(props) {
   );
 }
 
-function AppRoot(props) {
-
-  const preloadedQuestionQuery = loadQuery(RelayEnvironment, QuestionQuery, {});
+function AppRoot() {
 
   function loader(){
     return (
@@ -326,7 +345,7 @@ function AppRoot(props) {
     <ChakraProvider theme={extendTheme({ config: {  initialColorMode: "dark",  useSystemColorMode: false,} })}> {/*Chakra UI*/}
       <RelayEnvironmentProvider environment={RelayEnvironment}> {/*Relay*/}
         <Suspense fallback={loader()}> {/*While questions are gathered display loading screen*/}
-          <App preloadedQuery={preloadedQuestionQuery} />
+          <App preloadedQuery={loadQuery(RelayEnvironment, QuestionQuery, {})}/>
         </Suspense>
       </RelayEnvironmentProvider>
     </ChakraProvider>
@@ -337,7 +356,7 @@ export default AppRoot;
 
 // Hook to save state in sessionStorage
 // https://usehooks.com/useSessionStorage/
-function useSessionStorage(key, initialValue) {
+function useSessionStorage(key: string, initialValue: any) {
   // State to store our value
   // Pass initial state function to useState so logic is only executed once
   const [storedValue, setStoredValue] = useState(() => {
@@ -361,7 +380,7 @@ function useSessionStorage(key, initialValue) {
 
   // Return a wrapped version of useState's setter function that ...
   // ... persists the new value to sessionStorage.
-  const setValue = (value) => {
+  const setValue = (value: any) => {
     try {
       // Allow value to be a function so we have same API as useState
       const valueToStore =
@@ -381,7 +400,7 @@ function useSessionStorage(key, initialValue) {
 
 //Function to shuffle the question array randomly
 //https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
-function shuffle(array) {
+function shuffle(array: any) {
   var currentIndex = array.length,  randomIndex;
 
   //While there remain elements to shuffle

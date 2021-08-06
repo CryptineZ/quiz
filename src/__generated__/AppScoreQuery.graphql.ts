@@ -1,25 +1,20 @@
-/**
- * @flow
- */
-
+/* tslint:disable */
 /* eslint-disable */
+// @ts-nocheck
 
-'use strict';
+import { ConcreteRequest } from "relay-runtime";
+export type AppScoreQueryVariables = {};
+export type AppScoreQueryResponse = {
+    readonly scores: ReadonlyArray<{
+        readonly name: string | null;
+        readonly score: number | null;
+    } | null> | null;
+};
+export type AppScoreQuery = {
+    readonly response: AppScoreQueryResponse;
+    readonly variables: AppScoreQueryVariables;
+};
 
-/*::
-import type { ConcreteRequest } from 'relay-runtime';
-export type AppScoreQueryVariables = {||};
-export type AppScoreQueryResponse = {|
-  +scores: ?$ReadOnlyArray<?{|
-    +name: ?string,
-    +score: ?number,
-  |}>
-|};
-export type AppScoreQuery = {|
-  variables: AppScoreQueryVariables,
-  response: AppScoreQueryResponse,
-|};
-*/
 
 
 /*
@@ -32,7 +27,7 @@ query AppScoreQuery {
 }
 */
 
-const node/*: ConcreteRequest*/ = (function(){
+const node: ConcreteRequest = (function(){
 var v0 = {
   "alias": null,
   "args": null,
@@ -109,7 +104,5 @@ return {
   }
 };
 })();
-// prettier-ignore
-(node/*: any*/).hash = 'beab6ccc6c8eb928ecad37cdd433f9a0';
-
-module.exports = node;
+(node as any).hash = 'beab6ccc6c8eb928ecad37cdd433f9a0';
+export default node;

@@ -149,33 +149,43 @@ function Quiz(props: QuizProps){
         {},
         {fetchPolicy: 'store-and-network'},
       );
-      const scores = data ? data.scores : null;
 
-      //Check if there are scores yet
-      if(scores && scores.length){
-        //Map the data to display scoreboard
-        const scoreboardList = scores.map((score,i) => {
-          if(score){
-            return(
-              <Text mb={2} key={i}>
-                {score.name}: {score.score}
-              </Text>
-            );
-          }else{
-            return '';
-          }
-        });
-
-        return(
-          <Center mb={2} flexDirection="column">
-            {scoreboardList}
-          </Center>
-        );
-      }else{
+      //Check if there are any scores yet
+      if(!data || !data.scores || !data.scores.length){
         return(
           <Text mb={2}>Noch keine Resultate</Text>
         );
       }
+
+      const scores = data.scores.slice();
+
+      //Sort scores
+      scores.sort(function(a, b) {
+        if(!a || !a.score || !b || !b.score){
+          return 0;
+        }
+        return b.score - a.score;
+      });
+
+      //Map the data to display scoreboard
+      const scoreboardList = scores.map((score,i) => {
+        if(score){
+          return(
+            <Text mb={2} key={i}>
+              {score.name}: {score.score}
+            </Text>
+          );
+        }else{
+          return '';
+        }
+      });
+
+      return(
+        <Center mb={2} flexDirection="column">
+          {scoreboardList}
+        </Center>
+      );
+
     }
 
     function ScoreBoardInput(){

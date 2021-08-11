@@ -4,23 +4,23 @@
 
 import { ConcreteRequest } from "relay-runtime";
 
-export type AppScoreQueryVariables = {};
-export type AppScoreQueryResponse = {
+export type QuizResultScoreQueryVariables = {};
+export type QuizResultScoreQueryResponse = {
     readonly scores: ReadonlyArray<{
         readonly id: string;
         readonly name: string | null;
         readonly score: number | null;
     } | null> | null;
 };
-export type AppScoreQuery = {
-    readonly response: AppScoreQueryResponse;
-    readonly variables: AppScoreQueryVariables;
+export type QuizResultScoreQuery = {
+    readonly response: QuizResultScoreQueryResponse;
+    readonly variables: QuizResultScoreQueryVariables;
 };
 
 
 
 /*
-query AppScoreQuery {
+query QuizResultScoreQuery {
   scores {
     id
     name
@@ -69,7 +69,7 @@ return {
     "argumentDefinitions": [],
     "kind": "Fragment",
     "metadata": null,
-    "name": "AppScoreQuery",
+    "name": "QuizResultScoreQuery",
     "selections": (v0/*: any*/),
     "type": "Query",
     "abstractKey": null
@@ -78,18 +78,18 @@ return {
   "operation": {
     "argumentDefinitions": [],
     "kind": "Operation",
-    "name": "AppScoreQuery",
+    "name": "QuizResultScoreQuery",
     "selections": (v0/*: any*/)
   },
   "params": {
-    "cacheID": "2603367ac1f386d1e758db7d1bdb5eeb",
+    "cacheID": "75b3f17303b383d8bcc7de02c7c67227",
     "id": null,
     "metadata": {},
-    "name": "AppScoreQuery",
+    "name": "QuizResultScoreQuery",
     "operationKind": "query",
-    "text": "query AppScoreQuery {\n  scores {\n    id\n    name\n    score\n  }\n}\n"
+    "text": "query QuizResultScoreQuery {\n  scores {\n    id\n    name\n    score\n  }\n}\n"
   }
 };
 })();
-(node as any).hash = '15a303b5b26b8dd92118f90b66866064';
+(node as any).hash = '7fc6ed4429a8a73f5c4b0f70d71b9bf2';
 export default node;

@@ -4,26 +4,26 @@
 
 import { ConcreteRequest } from "relay-runtime";
 
-export type AppCreateScoreMutationVariables = {
+export type QuizResultCreateScoreMutationVariables = {
     name: string;
     score: number;
 };
-export type AppCreateScoreMutationResponse = {
+export type QuizResultCreateScoreMutationResponse = {
     readonly createScore: {
         readonly id: string;
         readonly name: string | null;
         readonly score: number | null;
     };
 };
-export type AppCreateScoreMutation = {
-    readonly response: AppCreateScoreMutationResponse;
-    readonly variables: AppCreateScoreMutationVariables;
+export type QuizResultCreateScoreMutation = {
+    readonly response: QuizResultCreateScoreMutationResponse;
+    readonly variables: QuizResultCreateScoreMutationVariables;
 };
 
 
 
 /*
-mutation AppCreateScoreMutation(
+mutation QuizResultCreateScoreMutation(
   $name: String!
   $score: Int!
 ) {
@@ -98,7 +98,7 @@ return {
     "argumentDefinitions": (v0/*: any*/),
     "kind": "Fragment",
     "metadata": null,
-    "name": "AppCreateScoreMutation",
+    "name": "QuizResultCreateScoreMutation",
     "selections": (v1/*: any*/),
     "type": "Mutation",
     "abstractKey": null
@@ -107,18 +107,18 @@ return {
   "operation": {
     "argumentDefinitions": (v0/*: any*/),
     "kind": "Operation",
-    "name": "AppCreateScoreMutation",
+    "name": "QuizResultCreateScoreMutation",
     "selections": (v1/*: any*/)
   },
   "params": {
-    "cacheID": "68e340367e763262114b81d7210ab646",
+    "cacheID": "826b370ab2d68c8bd1919fb9f617d9e2",
     "id": null,
     "metadata": {},
-    "name": "AppCreateScoreMutation",
+    "name": "QuizResultCreateScoreMutation",
     "operationKind": "mutation",
-    "text": "mutation AppCreateScoreMutation(\n  $name: String!\n  $score: Int!\n) {\n  createScore(name: $name, score: $score) {\n    id\n    name\n    score\n  }\n}\n"
+    "text": "mutation QuizResultCreateScoreMutation(\n  $name: String!\n  $score: Int!\n) {\n  createScore(name: $name, score: $score) {\n    id\n    name\n    score\n  }\n}\n"
   }
 };
 })();
-(node as any).hash = 'd48dd8fce598c7b9598fe87826575d79';
+(node as any).hash = '5ab786be307e93b88b2fd979d654a368';
 export default node;

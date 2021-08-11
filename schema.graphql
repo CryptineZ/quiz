@@ -26,4 +26,3 @@ type Score {
   name: String
   score: Int
 }
-
